@@ -1,8 +1,33 @@
 // Vercel serverless function: reads a supplier clause with Gemini and returns structured JSON.
 // Set GEMINI_API_KEY in Vercel > Project > Settings > Environment Variables.
-// Optional: GEMINI_MODEL (defaults to gemini-2.5-flash).
+// Optional: GEMINI_MODEL to force a model. Otherwise it tries current Flash models in order,
+// and if none exist, asks the API which models are available.
 
-const MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+const CANDIDATES = [process.env.GEMINI_MODEL, "gemini-3.5-flash", "gemini-3.7-flash", "gemini-3.5-flash-lite", "gemini-3.1-flash-lite", "gemini-2.5-flash"].filter(Boolean);
+let chosenModel = null;
+
+async function discoverModel(key) {
+  const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?pageSize=200&key=${encodeURIComponent(key)}`);
+  if (!r.ok) return null;
+  const data = await r.json();
+  const names = (data.models || [])
+    .filter((m) => (m.supportedGenerationMethods || []).includes("generateContent"))
+    .map((m) => String(m.name).replace(/^models\//, ""))
+    .filter((n) => /flash/.test(n) && !/(tts|audio|live|image|embedding|exp|preview)/.test(n));
+  return names[0] || null;
+}
+
+async function callModel(model, key, prompt) {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`;
+  return fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      contents: [{ role: "user", parts: [{ text: prompt }] }],
+      generationConfig: { temperature: 0.2, responseMimeType: "application/json", maxOutputTokens: 4096 },
+    }),
+  });
+}
 
 function buildPrompt(body) {
   const clause = String(body.clause || "").slice(0, 4000);
@@ -41,16 +66,18 @@ module.exports = async function handler(req, res) {
   try {
     const body = typeof req.body === "string" ? JSON.parse(req.body || "{}") : (req.body || {});
     if (!body.clause || String(body.clause).length < 20) { res.status(400).json({ error: "Clause text required" }); return; }
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${encodeURIComponent(key)}`;
-    const r = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ role: "user", parts: [{ text: buildPrompt(body) }] }],
-        generationConfig: { temperature: 0.2, responseMimeType: "application/json", maxOutputTokens: 900 },
-      }),
-    });
-    if (!r.ok) { res.status(502).json({ error: "AI provider error", status: r.status }); return; }
+    const prompt = buildPrompt(body);
+    let r = null;
+    const tryList = chosenModel ? [chosenModel] : CANDIDATES.slice();
+    for (const m of tryList) {
+      r = await callModel(m, key, prompt);
+      if (r.status !== 404 && r.status !== 400) { chosenModel = m; break; }
+    }
+    if (!r || r.status === 404 || r.status === 400) {
+      const found = await discoverModel(key);
+      if (found) { r = await callModel(found, key, prompt); if (r.ok) chosenModel = found; }
+    }
+    if (!r || !r.ok) { res.status(502).json({ error: "AI provider error", status: r ? r.status : 0 }); return; }
     const data = await r.json();
     const text = data && data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts && data.candidates[0].content.parts.map((p) => p.text || "").join("");
     let out;
@@ -62,6 +89,7 @@ module.exports = async function handler(req, res) {
       fields: out.fields.slice(0, 6).map((f) => [String(f[0]).slice(0, 60), String(f[1]).slice(0, 160)]),
       plain: out.plain.slice(0, 500),
       precedentNote: typeof out.precedentNote === "string" ? out.precedentNote.slice(0, 900) : undefined,
+      model: chosenModel,
     });
   } catch (e) {
     res.status(500).json({ error: "Server error" });
