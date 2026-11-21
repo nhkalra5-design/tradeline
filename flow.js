@@ -33,7 +33,7 @@
       const ew = TL.exposure(i, "accept");
       const ai = TL.aiFor(i.id);
       const ev = TL.evidence(i.id);
-      const dual = st.alsoLane ? `<div class="callout blue" style="margin-top:10px">Commercial-for-legal trade: needs both ${laneName(st.lane)} and ${laneName(st.alsoLane)}. ${st.approvals ? Object.keys(st.approvals).map((l) => `✓ ${TL.lanes[l].short} approved.`).join(" ") : ""}</div>` : "";
+      const dual = st.alsoLane ? `<div class="callout blue" style="margin-top:10px">Trades legal protection for price: needs both ${laneName(st.lane)} and ${laneName(st.alsoLane)}. ${st.approvals ? Object.keys(st.approvals).map((l) => `✓ ${TL.lanes[l].short} approved.`).join(" ") : ""}</div>` : "";
       return `<div class="inbox-item">
         <div class="row between wrap-row"><div class="row"><span class="dot ${i.light}"></span><b>${i.title}</b><span class="tiny muted">${D.supplier}</span></div>${TL.strength(ev)}</div>
         <div class="grid3" style="margin-top:12px">
@@ -66,7 +66,7 @@
     return `${stepperAt("approvals")}
     <div class="row between wrap-row" style="margin-bottom:16px">
       <div><h1>Approvals</h1><p class="muted" style="margin:6px 0 0">Each approver sees only what needs them, with Maya's proposal, the exposure and the evidence.</p></div>
-      <div class="role-switch">${counts.map(([l, n]) => `<button class="${role === l ? "on" : ""}" data-act="role" data-r="${l}"><span class="avatar ${l}" style="width:20px;height:20px;font-size:9px">${TL.people[l].initials}</span>${TL.lanes[l].label}${n ? ` · ${n}` : ""}</button>`).join("")}</div>
+      <div class="role-switch" data-tour="roles">${counts.map(([l, n]) => `<button class="${role === l ? "on" : ""}" data-act="role" data-r="${l}"><span class="avatar ${l}" style="width:20px;height:20px;font-size:9px">${TL.people[l].initials}</span>${TL.lanes[l].label}${n ? ` · ${n}` : ""}</button>`).join("")}</div>
     </div>
     <div class="grid2" style="grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);align-items:start">
       <div class="card">
@@ -101,12 +101,12 @@
       return `<div style="padding:16px 0;border-bottom:1px solid var(--line)">
         <div class="row between wrap-row"><b>${i.title} <span class="tiny muted">${D.documents.find((d) => d.id === i.source.doc).name.split(" #")[0]} ${i.source.section}</span></b><span class="chip ${firm ? "red" : "blue"}">${firm ? "Firm" : "Open to discussion"}</span></div>
         <div class="small" style="margin-top:6px"><span class="muted">Halden proposes:</span> <b>${esc(i.options[k].position)}</b></div>
-        <div class="small" style="margin-top:6px;color:var(--ink-2)"><span class="muted">Why:</span> ${esc(TL.ai[i.id].supplierReason)}</div>
+        <div class="small" style="margin-top:6px;color:var(--ink-2)"><span class="muted">Why:</span> ${k === i.recommended ? esc(TL.ai[i.id].supplierReason) : k === "accept" ? "Accepted as Ridgeline wrote it." : "<i>Maya adds the reason for this position before sending. The demo pre-writes reasons only for recommended positions.</i>"}</div>
       </div>`;
     }).join("");
     return `<div class="grid2" style="grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);align-items:start">
       <div class="card pad">
-        <div class="row between"><div class="eyebrow">Counter-proposal to Ridgeline · round 1</div><span class="cached-badge">Reasons drafted by AI · edited by Maya</span></div>
+        <div class="row between"><div class="eyebrow">Counter-proposal to Ridgeline · round 1</div><span class="cached-badge">Reasons drafted by AI for Maya to review</span></div>
         <h2 style="margin:8px 0 4px">Each change comes with a reason</h2>
         <p class="small muted" style="margin:0 0 6px">Redlines without commercial context drive extra rounds. Ridgeline sees what's firm and what's open.</p>
         ${rows}
@@ -114,7 +114,7 @@
       </div>
       <div class="stack">
         <div class="card pad"><div class="eyebrow">Fair to both sides</div>
-          <p class="small" style="margin:8px 0 0">"Fair" here means two things: every position is inside Halden's playbook, which is applied the same way to every managed IT supplier, and each request has a reason Ridgeline can respond to.</p></div>
+          <p class="small" style="margin:8px 0 0">"Fair" here means two things: every position is inside Halden's playbook or approved by its owner, applied the same way to every managed IT supplier, and each request has a reason Ridgeline can respond to.</p></div>
         <div class="card pad">${S.counterSent ? `<div class="callout green">Sent to Ridgeline. Their reply is in.</div><button class="btn primary" style="margin-top:12px" data-act="stage" data-s="round2">See Ridgeline's reply →</button>` : `<p class="small" style="margin:0 0 12px">Sending logs every position and reason in the deal history.</p><button class="btn primary" data-act="send-counter">Send to Ridgeline</button>`}</div>
       </div>
     </div>`;
@@ -162,7 +162,8 @@
       <div class="card pad">
         <div class="eyebrow">Ridgeline's reply · round 2</div>
         <h2 style="margin:8px 0 4px">Only what changed gets judged again</h2>
-        <p class="small muted" style="margin:0 0 6px">Spotting the supplier's edits, tracked or not, is the review foundation (Sirion's Redline Agent). Tradeline re-runs judgement and routing only on those items.</p>
+        <p class="tiny muted" style="margin:0 0 6px">Demo note: Ridgeline's reply is scripted against Tradeline's recommended positions.</p>
+        <p class="small muted" style="margin:0 0 6px">Sirion's Redline Agent spots the supplier's edits, tracked or not. Tradeline re-prices and re-routes only those items.</p>
         ${TL.round2.map(row).join("")}
         <div class="row between" style="margin-top:16px"><span class="small muted">${resolved ? "Every item is settled." : "Settle each changed item. Some need an approver."}</span><button class="btn ${resolved ? "primary" : ""}" data-act="agree">Agree terms →</button></div>
       </div>
@@ -172,13 +173,13 @@
 
   function ledger() {
     const S = TL.S();
-    let given = 0, gained = 0;
+    let given = 0, gained = 0, riskW = 0, riskF = 0;
     const rows = TL.issues.map((i) => {
       const f = finalFor(i.id);
       const ew = TL.exposure(i, "accept");
       const es = TL.exposure(i, "standard");
       const ef = TL.exposure(i, f.key, f.override);
-      if (ew.value !== null) { gained += ew.value - ef.value; given += Math.max(ef.value - es.value, 0); }
+      if (ew.value !== null) { if (ew.kind === "cost") { gained += ew.value - ef.value; given += Math.max(ef.value - es.value, 0); } else { riskW = Math.max(riskW, ew.value); riskF = Math.max(riskF, ef.value); } }
       return `<div class="ledger-row" style="grid-template-columns:minmax(0,1.3fr) 1fr 1fr">
         <div><b>${i.title}</b><div class="tiny muted">${esc(f.position)}</div></div>
         <div class="mono" style="color:var(--green)">${ew.value === null ? "Not priced" : "+" + fmt(ew.value - ef.value)}</div>
@@ -187,11 +188,11 @@
     }).join("");
     return `<div class="eyebrow">Give and get</div>
       <h3 style="margin:6px 0 4px">What Halden gained and gave up</h3>
-      <p class="tiny muted" style="margin:0 0 8px">Gained = exposure removed versus Ridgeline's first draft. Given = exposure accepted beyond Halden's own standard. Each figure is an "if it happens" scenario, not a forecast.</p>
+      <p class="tiny muted" style="margin:0 0 8px">Gained = exposure removed versus Ridgeline's first draft. Given = exposure accepted beyond Halden's own standard. Risks are "if it happens" scenarios, so they are never added to costs.</p>
       <div class="ledger-row ledger-head" style="grid-template-columns:minmax(0,1.3fr) 1fr 1fr"><div>Issue · current position</div><div>Gained</div><div>Given up</div></div>
       ${rows}
-      <div class="grid2" style="margin-top:14px"><div class="kpi"><div class="label">Total gained</div><div class="val" style="color:var(--green)">${fmt(gained)}</div></div><div class="kpi"><div class="label">Total given up</div><div class="val" style="color:var(--red)">${fmt(given)}</div></div></div>
-      <div class="small muted" style="margin-top:10px">Every agreed position is inside Halden's playbook${S.r2.exit_fee === "exception" ? ", except one Legal exception (exit notice)" : ""}.</div>`;
+      <div class="grid2" style="margin-top:14px"><div class="kpi"><div class="label">Cost exposure removed</div><div class="val" style="color:var(--green)">${fmt(gained)}</div><div class="sub">Cost rows only. ${given > 0 ? fmt(given) + " accepted beyond standard." : "Nothing accepted beyond standard."}</div></div><div class="kpi"><div class="label">Biggest single risk</div><div class="val"><span class="strike">${fmt(riskW)}</span>${fmt(riskF)}</div><div class="sub">Not added to costs</div></div></div>
+      <div class="small muted" style="margin-top:10px">Every agreed position is inside Halden's playbook or approved by its owner${S.r2.exit_fee === "exception" ? ", except one Legal exception (exit notice)" : ""}.</div>`;
   }
 
   // ---------- Agreed ----------
@@ -217,9 +218,9 @@
       ["Review Services Guide updates; exit if adverse", "Within 30 days of each update", "Daniel Okafor (Legal)"],
     ];
     return `<div class="card pad" style="margin-bottom:16px">
-      <div class="row between wrap-row"><div><div class="eyebrow">Agreed with Ridgeline · ready for signature</div><h1 style="margin-top:8px">Terms agreed in 9 working days</h1><p class="muted" style="margin:6px 0 0">Versus ~35 working days for a comparable deal today (synthetic baseline). Every decision was made by a person, with evidence.</p></div><span class="synthetic">Synthetic demo data</span></div>
+      <div class="row between wrap-row"><div><div class="eyebrow">Agreed with Ridgeline · ready for signature</div><h1 style="margin-top:8px">Terms agreed in 9 working days (illustrative)</h1><p class="muted" style="margin:6px 0 0">Versus about 35 working days for a comparable deal today (synthetic baseline). Every decision was made by a person, with evidence.</p></div><span class="synthetic">Synthetic demo data</span></div>
       <div class="grid4" style="margin-top:18px">
-        <div class="kpi"><div class="label">Costs locked in</div><div class="val"><span class="strike">${fmt(costW)}</span>${fmt(costF)}</div><div class="sub">Ridgeline's draft → agreed</div></div>
+        <div class="kpi"><div class="label">Cost exposure</div><div class="val"><span class="strike">${fmt(costW)}</span>${fmt(costF)}</div><div class="sub">Ridgeline's draft → agreed</div></div>
         <div class="kpi"><div class="label">Biggest single risk</div><div class="val"><span class="strike">${fmt(riskW)}</span>${fmt(riskF)}</div><div class="sub">Not added to costs</div></div>
         <div class="kpi"><div class="label">Issues closed by Procurement</div><div class="val">${TL.issues.filter((i) => S.status[i.id] && S.status[i.id].state === "decided").length + TL.greens.length} of ${TL.issues.length + TL.greens.length}</div><div class="sub">Legal saw only what needed Legal</div></div>
         <div class="kpi"><div class="label">Final signature</div><div class="val" style="font-size:20px;margin-top:8px">${appr.who.split(" (")[0]}</div><div class="sub">${fmt(TL.total())} total · ${appr.lane === "cpo" ? "above Maya's $1M limit" : "within Maya's limit"}</div></div>
