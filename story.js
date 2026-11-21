@@ -116,10 +116,11 @@
     <div class="story-sec"><div class="sec-num">06 · Assumptions and definitions</div>
       <div class="grid2">
         <div class="card pad"><div class="eyebrow">Assumptions</div><ul class="small" style="margin:8px 0 0;padding-left:18px;color:var(--ink-2)">
-          <li>Halden Systems, its people and every number are synthetic. Ridgeline's terms are modelled on a real managed IT services MSA.</li>
+          <li>Halden Systems, its people and every number are synthetic. Ridgeline's terms are modeled on a real managed IT services MSA.</li>
           <li>Halden has no contract tool today, so history would be built by extracting past signed contracts and redline versions from email and drives (for example with Sirion's Extraction Agent). Until it exists, Tradeline relies on the playbook and says the evidence is thin.</li>
           <li>Outcomes come from post-signature records (disputes, credits, exits). They are correlations from similar deals, not proof a clause caused a loss.</li>
           <li>Dollar figures are "if it happens" exposures with stated inputs, not forecasts.</li>
+          <li>Supplier leverage and urgency are tagged by Procurement when a deal starts. They are judgment inputs to the similarity score, not calculated.</li>
           <li>US company, US law. Approval limits by total contract value.</li></ul></div>
         <div class="card pad"><div class="eyebrow">What "fair" means here</div><p class="small" style="margin-top:8px">Every position sits inside Halden's playbook or is approved by its owner, applied the same way to every supplier in the category; every change goes to the supplier with a reason; and the give-and-get ledger shows what Halden gained against what it gave up.</p>
           <div class="eyebrow" style="margin-top:16px">Why one primary user</div><p class="small" style="margin-top:8px">Maya is the only person present at every step of a negotiation. Legal, Finance and the IT Director get focused approval views; the supplier gets reasoned proposals. Going deep on one user is what the brief asks for.</p></div>
