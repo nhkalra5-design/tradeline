@@ -91,7 +91,7 @@
       case "sla_credits": {
         const std = 0.05;
         const v = issue.missedMonths * monthly * term * Math.max(std - o.credit, 0);
-        return { value: v, kind: "cost", formula: `<b>${issue.missedMonths}</b> missed months a year (assumed) x <b>${fmt(monthly)}</b> x credits forgone versus our 5% standard (${Math.round(o.credit * 100)}% offered) x ${term} years` };
+        return { value: v, kind: "cost", formula: `<b>${issue.missedMonths}</b> missed months a year (assumed) x <b>${fmt(monthly)}</b> x credits forgone versus our 5% standard (${Math.round(o.credit * 100)}% offered) x ${term} year${term === 1 ? "" : "s"}` };
       }
       default:
         return { value: null, kind: "unpriced", formula: "Not priced. The impact depends on what Ridgeline later changes, so Tradeline does not invent a number." };
@@ -330,8 +330,8 @@
         <h1 style="margin:8px 0 4px">Ridgeline Managed IT</h1>
         <div class="muted">${fmt(D.annual)} a year · ${S.term}-year term · <b style="color:var(--ink)">${fmt(total())} total</b></div>
         <div class="grid2" style="margin-top:18px" data-tour="kpis">
-          <div class="kpi"><div class="label">Cost exposure in the terms as written</div><div class="val mono"><span class="strike">${fmt(w.cost)}</span>${fmt(r.cost)}</div><div class="sub">As written → with your choices. Under stated assumptions: price rises, late invoice disputes, missed credits.</div></div>
-          <div class="kpi"><div class="label">Biggest single risk if things go wrong</div><div class="val mono"><span class="strike">${fmt(w.risk)}</span>${fmt(r.risk)}</div><div class="sub">Not added to costs. Each risk is a different scenario, shown separately.</div></div>
+          <div class="kpi"><div class="label">Cost exposure in the terms as written</div><div class="val mono"><span class="strike">${fmt(w.cost)}</span>${fmt(r.cost)}</div><div class="sub">As written → with your choices, over the ${S.term}-year term. Under stated assumptions: price rises, late invoice disputes, missed credits.</div></div>
+          <div class="kpi"><div class="label">Biggest single risk if things go wrong</div><div class="val mono"><span class="strike">${fmt(w.risk)}</span>${fmt(r.risk)}</div><div class="sub">A single event, not a yearly figure. Not added to costs; each risk is a separate scenario.</div></div>
         </div>
       </div>
       <div class="card pad">
@@ -531,7 +531,7 @@
         <p class="tiny muted" style="margin-top:12px">Playbook structure (standard, fallback, walk-away, escalation tier) follows the industry pattern used by Ironclad, Spellbook and LegalOn.</p>
       </div>`;
     } else {
-      body = `<div class="callout blue">Similarity is calculated, not guessed: 40% category, 30% deal size, 20% supplier leverage, 10% urgency. Deals scoring 70% or more count as similar.</div>
+      body = `<div class="callout blue">Similarity uses a fixed formula: 40% category, 30% deal size, 20% supplier leverage, 10% urgency. Leverage and urgency are tagged by Procurement when a deal starts. Deals scoring 70% or more count as similar.</div>
       <div style="margin-top:12px">${ev.list.map(({ p: x, sim }) => `<div class="prec" style="${sim.score < 0.7 ? "opacity:.62" : ""}">
         <div class="row between"><div><b>${x.supplier}</b> <span class="tiny muted">${x.id} · ${x.year} · ${x.category} · ${fmt(x.annual)}/yr</span></div><span class="chip ${sim.score >= 0.7 ? "blue" : "outline"}">${Math.round(sim.score * 100)}% similar</span></div>
         <div class="small" style="margin-top:8px"><span class="muted">Supplier asked:</span> ${esc(x.ask)}<br><span class="muted">Halden agreed:</span> <b>${esc(x.agreed)}</b> · ${x.rounds} round${x.rounds > 1 ? "s" : ""} · approved by ${esc(x.approver)}</div>
