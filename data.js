@@ -24,7 +24,7 @@ TL.lanes = {
   maya: { label: "You can close", short: "Maya", who: "Maya (Procurement)" },
   legal: { label: "Legal", short: "Legal", who: "Daniel Okafor (Legal)" },
   finance: { label: "Finance", short: "Finance", who: "Priya Shah (Finance)" },
-  owner: { label: "Business owner", short: "IT Director", who: "Tom Becker (IT Director)" },
+  owner: { label: "IT Director", short: "IT Director", who: "Tom Becker (IT Director)" },
 };
 
 // Delegation of authority: by total contract value
@@ -47,7 +47,7 @@ TL.deal = {
   documents: [
     { id: "msa", name: "Master Services Agreement", from: "Ridgeline", status: "received", pages: 14 },
     { id: "order", name: "Order Form #RL-2026-07", from: "Ridgeline", status: "received", pages: 3 },
-    { id: "guide", name: "Services Guide (v4.2)", from: "Ridgeline", status: "missing", ref: "Referenced in MSA §2(b) and §6.1. Holds service levels, support hours and renewal mechanics." },
+    { id: "guide", name: "Services Guide (v4.2)", from: "Ridgeline", status: "missing", ref: "Referenced in MSA §2(b) and §6.1. Holds service levels and support hours." },
   ],
 };
 
@@ -56,18 +56,18 @@ TL.categoryAffinity = {
   "Managed IT": { "Managed IT": 1, "IT staffing": 0.6, "SaaS": 0.45, "Facilities": 0.2 },
 };
 
-// ---------- Playbook (owned by Legal) ----------
+// ---------- Playbook (maintained by Legal) ----------
 TL.playbook = [
   {
     id: "liability_cap", name: "Limitation of liability", owner: "Legal",
-    standard: "Cap at 12 months' fees", fallback: "Cap at 6 months' fees", walkaway: "Below 6 months' fees, Legal must approve",
+    standard: "Cap at 12 months' fees", fallback: "Cap at 6 months' fees", walkaway: "Below 3 months' fees",
     tier: "Procurement can agree standard or fallback. Anything lower goes to Legal.",
     formula: "Unrecovered loss = incident cost minus the cap", full: true,
   },
   {
     id: "exit_fee", name: "Early termination fee", owner: "Legal",
     standard: "Exit for convenience on 90 days' notice, fee up to 3 months' fees", fallback: "Fee up to 6 months' fees, notice up to 120 days", walkaway: "All remaining fees, or notice over 120 days",
-    tier: "Procurement can agree standard or fallback. Beyond that, Legal and the business owner approve.",
+    tier: "Procurement can agree standard or fallback. Beyond that, Legal and the IT Director approve.",
     formula: "Exit cost = months of fees owed if you leave halfway through", full: true,
   },
   {
@@ -83,9 +83,9 @@ TL.playbook = [
     formula: "Lost money = billing errors found after the dispute window closes", full: true,
   },
   {
-    id: "sla_credits", name: "Service levels and credits", owner: "Business owner",
+    id: "sla_credits", name: "Service levels and credits", owner: "IT Director",
     standard: "Service credits of 5% of the monthly fee per missed month; exit after 3 misses in 6 months", fallback: "Credits of 3% with chronic-failure exit", walkaway: "No service credits and no exit for chronic failure",
-    tier: "The business owner decides trade-offs on service quality.",
+    tier: "The IT Director decides trade-offs on service quality.",
     formula: "Credits forgone = missed months x credit rate x monthly fee", full: true,
   },
   {
@@ -94,9 +94,9 @@ TL.playbook = [
     tier: "Legal approves anything below standard.",
     formula: "Not priced: the impact depends on what the supplier later changes", full: true,
   },
-  { id: "confidentiality", name: "Confidentiality", owner: "Legal", standard: "Mutual, 3 years after termination", fallback: "Mutual, 2 years", walkaway: "One-way in supplier's favour", tier: "Procurement can agree standard or fallback.", formula: "Not priced", full: false },
+  { id: "confidentiality", name: "Confidentiality", owner: "Legal", standard: "Mutual, 3 years after termination", fallback: "Mutual, 2 years", walkaway: "One-way in supplier's favor", tier: "Procurement can agree standard or fallback.", formula: "Not priced", full: false },
   { id: "governing_law", name: "Governing law", owner: "Legal", standard: "Delaware or New York", fallback: "California", walkaway: "Non-US law", tier: "Procurement can agree standard or fallback.", formula: "Not priced", full: false },
-  { id: "data_location", name: "Data location", owner: "Legal", standard: "US data centres only", fallback: "US and EU", walkaway: "Unrestricted", tier: "Procurement can agree standard or fallback.", formula: "Not priced", full: false },
+  { id: "data_location", name: "Data location", owner: "Legal", standard: "US data centers only", fallback: "US and EU", walkaway: "Unrestricted", tier: "Procurement can agree standard or fallback.", formula: "Not priced", full: false },
   { id: "assignment", name: "Assignment", owner: "Legal", standard: "Mutual consent, not unreasonably withheld", fallback: "Supplier may assign to affiliates", walkaway: "Supplier may assign freely", tier: "Procurement can agree standard or fallback.", formula: "Not priced", full: false },
 ];
 
@@ -160,7 +160,7 @@ TL.issues = [
       accept: { label: "Accept as written", position: "All remaining fees", lane: "legal", alsoLane: "owner", months: (term) => term * 6 },
       standard: { label: "Counter with our standard", position: "Exit on 90 days' notice, fee of 3 months' fees", lane: "maya", months: () => 3 },
       fallback: { label: "Counter with our fallback", position: "Exit on 120 days' notice, fee of 6 months' fees", lane: "maya", months: () => 6 },
-      trade: { label: "Offer a trade", position: "Accept 9 months' fee in exchange for a 3% price cut", lane: "legal", alsoLane: "owner", months: () => 9, priceCut: 0.03 },
+      trade: { label: "Offer a trade", position: "Exit fee of 9 months' fees, in exchange for a 3% price cut", lane: "legal", alsoLane: "owner", months: () => 9, priceCut: 0.03 },
     },
     scenario: "If Halden leaves halfway through the term",
   },
@@ -187,8 +187,8 @@ TL.issues = [
     source: { doc: "order", section: "§2" }, light: "amber",
     text: "This Order renews automatically for successive twelve (12) month terms unless either party gives written notice of non-renewal at least ninety (90) days before the end of the then-current term. Provider may increase fees on each anniversary by up to seven percent (7%).",
     extract: { type: "Auto-renewal and price increase", fields: [["Renewal", "Automatic, 12 months"], ["Notice to stop it", "90 days"], ["Yearly increase", "Up to 7%"]] },
-    plain: "Prices can rise 7% every year, and unless someone sends notice 90 days before the end, Halden is locked into another year at the higher price.",
-    combo: "Harmless one by one, costly together: a yearly 7% rise, a 90-day notice window and a 12-month auto-renewal.",
+    plain: "Prices can rise up to 7% every year, and unless someone sends notice 90 days before the end, Halden is locked into another year at the higher price.",
+    combo: "Each looks routine on its own. Together they are costly: a yearly 7% rise, a 90-day notice window and a 12-month auto-renewal.",
     kind: "cost",
     asWrittenLane: "finance",
     recommended: "fallback",
@@ -215,7 +215,7 @@ TL.issues = [
       standard: { label: "Counter with our standard", position: "120-day dispute window, 0.5% late fee", lane: "finance", lostShare: 0.1 },
       fallback: { label: "Counter with our fallback", position: "90-day dispute window, 1% late fee", lane: "finance", lostShare: 0.25 },
     },
-    scenario: "If 2% of invoices carry errors (assumed) and errors found after the window are lost",
+    scenario: "If invoice errors equal 2% of annual fees (assumed) and errors found after the window are lost",
   },
   {
     id: "sla_credits", clause: "sla_credits", title: "Service levels and credits",
@@ -258,52 +258,52 @@ TL.issues = [
 TL.greens = [
   { id: "g1", title: "Confidentiality", source: "MSA §11", text: "Mutual confidentiality for 3 years after termination.", match: "Matches standard" },
   { id: "g2", title: "Governing law", source: "MSA §14.1", text: "Laws of the State of Delaware.", match: "Matches standard" },
-  { id: "g3", title: "Data location", source: "MSA §8.4", text: "Client data stored in US data centres only.", match: "Matches standard" },
+  { id: "g3", title: "Data location", source: "MSA §8.4", text: "Client data stored in US data centers only.", match: "Matches standard" },
   { id: "g4", title: "Assignment", source: "MSA §14.3", text: "Neither party may assign without consent, not to be unreasonably withheld.", match: "Matches standard" },
-  { id: "g5", title: "Notices", source: "MSA §14.5", text: "Notices by email with copy to the legal contact named in the Order.", match: "Matches standard" },
-  { id: "g6", title: "Subcontracting", source: "MSA §3.4", text: "Provider remains responsible for subcontractors; Client notified of new ones.", match: "Matches standard" },
-  { id: "g7", title: "Publicity", source: "MSA §14.8", text: "No use of Client's name or logo without written consent.", match: "Matches standard" },
-  { id: "g8", title: "Force majeure", source: "MSA §13", text: "Mutual relief for events beyond reasonable control; termination after 30 days.", match: "Matches fallback" },
+  { id: "g5", title: "Notices", source: "MSA §14.5", text: "Notices by email with copy to the legal contact named in the Order.", match: "Standard wording (not in playbook)" },
+  { id: "g6", title: "Subcontracting", source: "MSA §3.4", text: "Provider remains responsible for subcontractors; Client notified of new ones.", match: "Standard wording (not in playbook)" },
+  { id: "g7", title: "Publicity", source: "MSA §14.8", text: "No use of Client's name or logo without written consent.", match: "Standard wording (not in playbook)" },
+  { id: "g8", title: "Force majeure", source: "MSA §13", text: "Mutual relief for events beyond reasonable control; termination after 30 days.", match: "Standard wording (not in playbook)" },
 ];
 
 // ---------- Cached AI outputs (used when live AI is unavailable) ----------
 TL.ai = {
   exit_fee: {
-    precedentNote: "The closest deals are other managed IT contracts with medium supplier leverage. In 3 of 4 we moved the supplier from 'all remaining fees' to 3 to 6 months. The one time we accepted all remaining fees (Brightpath, P-202) we later exited after outages and paid $540K. That deal had higher supplier leverage and a go-live deadline, so it is similar but not identical.",
+    precedentNote: "The closest deals are other managed IT contracts with medium supplier leverage. All 4 ended at 3 to 6 months' fees. In 2 of them the supplier first asked for all remaining fees. The one time we accepted all remaining fees (Brightpath, P-202) we later exited after outages and paid $540K. That deal had higher supplier leverage and a go-live deadline, so it is similar but not identical.",
     supplierReason: "We need the ability to exit if the service doesn't work for us. We can accept a fee of six months' fees with 120 days' notice, which protects your planning while keeping the commitment fair for both sides.",
-    brief: "Maya proposes a 9-month exit fee in exchange for a 3% price cut ($43K over 3 years). This is beyond the playbook fallback (6 months). Exit cost if Halden leaves halfway: $360K versus $240K at fallback.",
+    brief: "Ridgeline asks for all remaining fees if Halden exits early. Maya's proposal is shown above. It is beyond the playbook fallback of 6 months' fees, so it needs your approval. At fallback, leaving halfway would cost $240K.",
   },
   liability_cap: {
-    precedentNote: "Of 5 comparable deals, 4 ended at 6 months' fees or higher. The only deal that accepted 3 months (Brightpath, P-102) later left $210K unrecovered after an outage. Keystone (P-103) got 12 months, but that was a competitive bid with low urgency, which is less like this deal.",
+    precedentNote: "Of 4 similar deals, 3 ended at 6 months' fees or higher. The only deal that accepted 3 months (Brightpath, P-102) later left $210K unrecovered after an outage. Keystone (P-103) got 12 months, but that was a competitive bid with low urgency, which is less like this deal.",
     supplierReason: "A cap of three months' fees doesn't reflect the impact a serious outage would have on our operations. Our standard for managed IT services is twelve months' fees, which we apply to all providers in this category.",
-    brief: "Ridgeline wants a cap at 3 months' fees ($120K). Maya proposes our standard of 12 months. No Legal approval needed unless Ridgeline refuses to go above 6 months.",
+    brief: "Ridgeline wants a cap at 3 months' fees ($120K). Maya's proposal is shown above. It is below the 6-month fallback, so Legal approves. At 6 months or more, Maya can agree it herself.",
   },
   renewal_price: {
-    precedentNote: "In 3 of 5 comparable deals we capped increases at 3 to 4% with 60 days' notice. One SaaS deal accepted 7% and 90 days as written and later renewed by mistake for a tool being replaced, costing $64K (P-302).",
+    precedentNote: "All 3 similar deals capped increases: two at 3 to 4% with 60 days' notice, one at US CPI. A less similar SaaS deal accepted 7% and 90 days as written and later renewed by mistake for a tool being replaced, costing $64K (P-302).",
     supplierReason: "We can accept automatic renewal if increases are capped at 3% a year and the notice period is 60 days, with a reminder from your team 30 days before the date.",
-    brief: "Ridgeline asks for up to 7% a year. Maya proposes a 3% cap and 60 days' notice, within the playbook fallback.",
+    brief: "Ridgeline asks for up to 7% a year with 90 days' notice. Maya's proposal is shown above. It is beyond the playbook fallback (3% cap, 60 days' notice), so Finance approves.",
   },
   payment_terms: {
-    precedentNote: "Finance moved 3 of 4 comparable suppliers to a 90-day window. With Northwall (P-401), the longer window let us recover $11K of duplicate charges.",
+    precedentNote: "Finance moved 2 of 3 similar suppliers to a 90-day window. Brightpath (P-403) accepted 60 days as written. With Northwall (P-401), the longer window let us recover $11K of duplicate charges.",
     supplierReason: "Our accounts payable process reconciles invoices quarterly, so we need a 90-day window to raise any disputes. We're happy to keep your 1% late fee.",
-    brief: "Ridgeline offers a 60-day dispute window. Maya proposes our fallback of 90 days and accepts the 1% late fee. Finance approves all payment-term changes.",
+    brief: "Ridgeline offers a 60-day dispute window. Maya's proposal is shown above. Finance approves all payment-term changes.",
   },
   sla_credits: {
-    precedentNote: "Every comparable managed IT deal that later had outages either had credits or regretted not having them. Brightpath (P-502) had no credits and no exit right, which led to the costly exit in P-202.",
+    precedentNote: "Every similar managed IT deal that later had outages either had credits or regretted not having them. Brightpath (P-502) had no credits and no exit right, which led to the costly exit in P-202.",
     supplierReason: "Response times only matter if there's a consequence for missing them. We're asking for 5% service credits per missed month and a right to exit after 3 misses in 6 months.",
-    brief: "Ridgeline offers no service credits. Maya recommends our standard. If you prefer, 3% credits are acceptable if the 45-day exclusion is dropped.",
+    brief: "Ridgeline offers no service credits. Maya proposes the position shown above. Service trade-offs are the IT Director's call.",
   },
   unilateral_changes: {
-    precedentNote: "Evidence is thin: only 2 past deals, and one of them is disputed. With so little to go on, Tradeline defaults to Legal.",
+    precedentNote: "Evidence is thin: only 1 similar past deal, and it is disputed. With so little to go on, Tradeline defaults to Legal.",
     supplierReason: "We can accept updates to the Services Guide if they don't reduce the service, with a right for us to exit without a fee if they do.",
-    brief: "Ridgeline can change the Services Guide by email with no exit right. Only 2 precedents, one disputed, so this goes to Legal by default.",
+    brief: "Ridgeline can change the Services Guide by email with no exit right. Only 1 similar past deal, and it is disputed, so this goes to Legal by default.",
   },
 };
 
 // ---------- Round 2: Ridgeline's reply (scripted) ----------
 TL.round2 = [
   { issue: "liability_cap", response: "countered", text: "Ridgeline offers 6 months' fees.", newPosition: "6 months' fees", lane: "maya", note: "Within our fallback. You can accept." , months: 6},
-  { issue: "exit_fee", response: "untracked", text: "Ridgeline accepted a 6-month fee, but the notice period was changed from 120 to 180 days without tracked changes.", newPosition: "6 months' fees, 180 days' notice", lane: "legal", note: "Untracked edit caught by the review foundation (Sirion Redline Agent). 180 days is beyond our walk-away, so this goes to Legal.", months: 6 },
+  { issue: "exit_fee", response: "untracked", text: "Ridgeline accepted a 6-month fee, but the notice period was changed from 120 to 180 days without tracked changes.", newPosition: "6 months' fees, 180 days' notice", lane: "legal", note: "Untracked edit flagged. In production, Sirion's Redline Agent catches this. 180 days is beyond our walk-away, so this goes to Legal.", months: 6 },
   { issue: "renewal_price", response: "accepted", text: "Ridgeline accepted a 3% cap and 60 days' notice.", newPosition: "3% cap, 60 days' notice", lane: "maya", note: "Agreed." },
   { issue: "payment_terms", response: "accepted", text: "Ridgeline accepted a 90-day dispute window.", newPosition: "90-day dispute window", lane: "finance", note: "Agreed." },
   { issue: "sla_credits", response: "countered", text: "Ridgeline offers 3% credits if the 45-day exclusion stays.", newPosition: "3% credits, 45-day exclusion stays", lane: "owner", note: "A service trade-off. The IT Director decides." , credit: 0.03},
