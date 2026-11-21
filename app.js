@@ -1,4 +1,4 @@
-// Tradeline prototype: core state, maths and hero screens.
+// Tradeline prototype: core state, math and hero screens.
 (function () {
   const D = TL.deal;
   const monthly = D.annual / 12;
@@ -42,6 +42,7 @@
   });
   let S = fresh();
   TL.S = () => S;
+  TL.resetState = () => { S = fresh(); return S; };
 
   const logIt = (who, what) => {
     const d = new Date();
@@ -49,7 +50,7 @@
   };
   TL.logIt = logIt;
 
-  // ---------- Maths ----------
+  // ---------- Math ----------
   const total = () => D.annual * S.term;
   const dealApprover = () => TL.doa.find((t) => total() <= t.max);
   TL.total = total;
@@ -85,7 +86,7 @@
       case "payment_terms": {
         const errors = D.annual * issue.errorRate;
         const v = errors * o.lostShare * term;
-        return { value: v, kind: "cost", formula: `<b>${fmt(errors)}</b> of invoice errors a year (2%, assumed) x <b>${Math.round(o.lostShare * 100)}%</b> found too late x ${term} years` };
+        return { value: v, kind: "cost", formula: `<b>${fmt(errors)}</b> of invoice errors a year (2%, assumed) x <b>${Math.round(o.lostShare * 100)}%</b> found too late x ${term} year${term === 1 ? "" : "s"}` };
       }
       case "sla_credits": {
         const std = 0.05;
@@ -190,7 +191,7 @@
     const ev = evidence(issueId);
     try {
       const ctrl = new AbortController();
-      const timer = setTimeout(() => ctrl.abort(), 20000);
+      const timer = setTimeout(() => ctrl.abort(), 28000);
       const res = await fetch("/api/extract", {
         method: "POST", headers: { "Content-Type": "application/json" }, signal: ctrl.signal,
         body: JSON.stringify({
@@ -238,14 +239,14 @@
   TL.strength = strength;
   const moneyCell = (e) => e.value === null ? `<span class="money none">Not priced</span>` : `<span class="money ${e.kind}">${fmt(e.value)}</span>`;
   TL.moneyCell = moneyCell;
-  const kindLabel = (k) => k === "risk" ? "Risk if things go wrong" : k === "cost" ? "Cost locked in" : "Not priced";
+  const kindLabel = (k) => k === "risk" ? "Risk if things go wrong" : k === "cost" ? "Cost exposure" : "Not priced";
 
   // ---------- Top bar ----------
   function topbar() {
     const v = S.view;
     const pendingCount = Object.values(S.status).filter((s) => s.state === "pending").length;
     return `<div class="topbar"><div class="topbar-in">
-      <div class="brand"><div class="brand-mark">T</div>Tradeline<small>built on Sirion</small></div>
+      <div class="brand"><div class="brand-mark">T</div>Tradeline<small>a concept on Sirion</small></div>
       <nav class="nav">
         <button data-act="view" data-v="deal" class="${v === "deal" ? "on" : ""}">Ridgeline deal</button>
         <button data-act="view" data-v="approvals" class="${v === "approvals" ? "on" : ""}">Approvals${pendingCount ? ` · ${pendingCount}` : ""}</button>
@@ -285,7 +286,7 @@
     }).join("");
     return `${stepper()}
     <div class="grid2" style="grid-template-columns:minmax(0,1.3fr) minmax(0,1fr)">
-      <div class="card pad">
+      <div class="card pad" data-tour="packet">
         <div class="eyebrow">Mon 9:12 AM · forwarded by Tom Becker, IT Director</div>
         <h2 style="margin:8px 0 6px">Ridgeline sent their contract. One document it relies on is missing.</h2>
         <p class="muted" style="margin:0 0 18px">Tradeline checks the whole packet before review, because key terms often sit outside the main agreement.</p>
@@ -303,7 +304,7 @@
         <button class="btn" data-act="request-guide">Send request to Ridgeline</button>`}
         <div class="divider"></div>
         <button class="btn primary" data-act="start-review">Start review with what we have →</button>
-        <p class="tiny muted" style="margin-top:10px">Issue detection on the received documents is the review foundation, the job Sirion's IssueDetection Agent does today. Tradeline adds the judgement on top.</p>
+        <p class="tiny muted" style="margin-top:10px">In production, Sirion's IssueDetection Agent finds the issues. Tradeline builds on it with a price, an owner and evidence for each one.</p>
       </div>
     </div>`;
   }
@@ -328,8 +329,8 @@
         <div class="row between wrap-row"><div class="eyebrow">${D.type} · ${D.context.split(".")[0]}</div><span class="synthetic">Synthetic demo data</span></div>
         <h1 style="margin:8px 0 4px">Ridgeline Managed IT</h1>
         <div class="muted">${fmt(D.annual)} a year · ${S.term}-year term · <b style="color:var(--ink)">${fmt(total())} total</b></div>
-        <div class="grid2" style="margin-top:18px">
-          <div class="kpi"><div class="label">Costs locked in unless you act</div><div class="val mono"><span class="strike">${fmt(w.cost)}</span>${fmt(r.cost)}</div><div class="sub">As written → with your current choices. Price rises, lost invoice disputes, forgone credits.</div></div>
+        <div class="grid2" style="margin-top:18px" data-tour="kpis">
+          <div class="kpi"><div class="label">Cost exposure in the terms as written</div><div class="val mono"><span class="strike">${fmt(w.cost)}</span>${fmt(r.cost)}</div><div class="sub">As written → with your choices. Under stated assumptions: price rises, late invoice disputes, missed credits.</div></div>
           <div class="kpi"><div class="label">Biggest single risk if things go wrong</div><div class="val mono"><span class="strike">${fmt(w.risk)}</span>${fmt(r.risk)}</div><div class="sub">Not added to costs. Each risk is a different scenario, shown separately.</div></div>
         </div>
       </div>
@@ -339,7 +340,7 @@
           <input type="range" min="1" max="5" step="1" value="${S.term}" data-act="term" aria-label="Contract term in years" style="margin:10px 0 6px">
           <div class="small">Total value <b>${fmt(total())}</b>. Final contract signed by <b>${appr.who}</b>${appr.lane === "cpo" ? `, because it is above Maya's $1M limit.` : `, within her limit.`}</div>
         </div>
-        <div class="tiny muted" style="margin-top:12px">Approval limits (total contract value): buyers up to $100K · Maya up to $1M · CPO above. Legal's playbook applies at any value.</div>
+        <div class="tiny muted" style="margin-top:12px">Approval limits (total contract value): buyers up to $100K · Maya up to $1M · CPO above. Halden's playbook applies at any value.</div>
       </div>
     </div>
 
@@ -354,7 +355,7 @@
     </div>
 
     <div class="card pad" style="margin-top:16px" data-tour="issues">
-      <div class="row between wrap-row"><div><h3>Issues, ranked by what they could cost</h3><div class="small muted">Click any issue to see the evidence and decide.</div></div><div class="small muted">${decided} of ${TL.issues.length + 1} decided</div></div>
+      <div class="row between wrap-row"><div><h3>Issues, ranked by what they could cost</h3><div class="small muted">Click any issue to see the evidence and decide.</div></div><div class="small muted">${decided} of ${TL.issues.length + 1} items decided (${TL.issues.length} issues and the ${TL.greens.length}-clause batch)</div></div>
       <div class="issue-list" style="margin-top:12px">
         ${rows.map(({ i, e, ew }) => {
           const st = S.status[i.id];
@@ -416,7 +417,7 @@
     const sc = TL.scale[i.id];
     const fields = ai.fields || i.extract.fields;
     if (!S.ai[i.id]) setTimeout(() => TL.requestAI(i.id), 0);
-    const aiBadge = S.ai[i.id] && S.ai[i.id].mode === "loading" ? `<span class="cached-badge">Reading…</span>` : ai.mode === "live" ? `<span class="live-badge">Live AI</span>` : `<span class="cached-badge">AI · pre-analysed</span>`;
+    const aiBadge = S.ai[i.id] && S.ai[i.id].mode === "loading" ? `<span class="cached-badge">Reading…</span>` : ai.mode === "live" ? `<span class="live-badge">Live AI</span>` : `<span class="cached-badge">AI · saved result</span>`;
 
     const optsHtml = Object.entries(i.options).map(([k, o]) => {
       const oe = exposure(i, k);
@@ -432,7 +433,7 @@
       const gain = i.options[key].priceCut * total();
       const fb = exposure(i, "fallback");
       return `<div class="balance" style="margin-top:12px"><div class="give"><div class="bl">You give</div><div class="bv">+${fmt(e.value - fb.value)} risk</div><div class="small">versus our fallback, if Halden exits halfway</div></div><div class="get"><div class="bl">You get</div><div class="bv">${fmt(gain)} saved</div><div class="small">${Math.round(i.options[key].priceCut * 100)}% price cut over ${S.term} years</div></div></div>
-      <div class="callout ${gain >= e.value - fb.value ? "green" : "red"}" style="margin-top:8px">${gain >= e.value - fb.value ? "The saving covers the extra risk." : "The saving is smaller than the extra risk. A commercial-for-legal trade, so Legal and the IT Director both approve."}</div>`;
+      <div class="callout ${gain >= e.value - fb.value ? "green" : "red"}" style="margin-top:8px">${gain >= e.value - fb.value ? "The saving covers the extra risk." : "The saving is smaller than the extra risk. This trades legal protection for a lower price, so Legal and the IT Director both approve."}</div>`;
     })() : "";
 
     const comm = dealApprover();
@@ -447,7 +448,7 @@
     </div>
     <div class="detail">
       <div class="stack">
-        <div class="card pad">
+        <div class="card pad" data-tour="ai-read">
           <div class="row between"><div class="eyebrow">What Ridgeline wrote</div>${i.hiddenIn ? `<span class="chip amber">Found outside the MSA</span>` : ""}</div>
           <p class="quote" style="margin-top:12px">${esc(i.text)}</p>
           ${i.hiddenIn ? `<p class="small muted" style="margin:10px 0 0">${i.hiddenIn}</p>` : ""}
@@ -485,24 +486,24 @@
       </div>
 
       <div class="stack" style="position:sticky;top:84px">
-        <div class="card pad">
+        <div class="card pad" data-tour="rec">
           <div class="eyebrow">Recommendation</div>
           <h3 style="margin:6px 0 10px">${i.options[i.recommended].label}: ${esc(i.options[i.recommended].position)}</h3>
           <div class="small" style="color:var(--ink-2)">${esc(ai.precedentNote)}</div>
           <div class="row between wrap-row" style="margin-top:12px">${strength(ev)}<button class="btn small" data-act="drawer" data-tab="precedents">See the ${ev.n} deals →</button></div>
         </div>
 
-        <div class="card pad">
+        <div class="card pad" data-tour="options">
           <div class="eyebrow" style="margin-bottom:10px">Your decision</div>
           <div class="options">${optsHtml}</div>
           ${trade}
         </div>
 
-        <div class="card pad">
+        <div class="card pad" data-tour="authority">
           <div class="eyebrow">Who approves this</div>
-          <div class="auth-q"><span class="tick ${inPlaybook ? "yes" : "no"}">${inPlaybook ? "✓" : "!"}</span><div><b>Inside Legal's playbook?</b><br><span class="small muted">${inPlaybook ? "Yes. Your chosen position is at standard or fallback." : "No. Below fallback, so it needs approval."}</span></div></div>
+          <div class="auth-q"><span class="tick ${inPlaybook ? "yes" : "no"}">${inPlaybook ? "✓" : "!"}</span><div><b>Inside Halden's playbook?</b><br><span class="small muted">${inPlaybook ? "Yes, within the playbook's limits." : "No. Below fallback, so it needs approval."} ${esc(pb(i.clause) ? pb(i.clause).tier : "")}</span></div></div>
           <div class="auth-q"><span class="tick ${evOk ? "yes" : "no"}">${evOk ? "✓" : "!"}</span><div><b>Enough evidence?</b><br><span class="small muted">${evOk ? `${ev.label} evidence from ${ev.n} similar deals.` : `Thin evidence (${ev.n} similar deal${ev.n === 1 ? "" : "s"}). Legal by default.`}</span></div></div>
-          <div class="auth-q"><span class="tick ${comm.lane === "cpo" ? "cpo" : "yes"}">${comm.lane === "cpo" ? "↑" : "✓"}</span><div><b>Inside Maya's commercial limit?</b><br><span class="small muted">${comm.lane === "cpo" ? `No. ${fmt(total())} total is above $1M, so the CPO signs the final contract. This issue can still be settled here.` : `Yes. ${fmt(total())} total is within her $1M limit.`}</span></div></div>
+          <div class="auth-q"><span class="tick ${comm.lane === "cpo" ? "cpo" : "yes"}">${comm.lane === "cpo" ? "↑" : "✓"}</span><div><b>Inside Maya's signing limit?</b><br><span class="small muted">${comm.lane === "cpo" ? `No. ${fmt(total())} total is above $1M, so the CPO signs the final contract. This issue can still be settled here.` : `Yes. ${fmt(total())} total is within her $1M limit.`}</span></div></div>
           <div class="divider" style="margin:12px 0"></div>
           ${st ? `<div class="row between"><span>${statusChip(st)}</span><button class="btn small" data-act="undo">Change decision</button></div>` :
             `<div class="row between wrap-row"><div class="small">This issue: <b>${TL.lanes[lane].who}</b></div>
@@ -524,7 +525,7 @@
     let body = "";
     if (tab === "playbook") {
       body = `<div class="card pad">
-        <div class="eyebrow">Halden playbook · owned by Legal (Daniel Okafor)</div>
+        <div class="eyebrow">Halden playbook · maintained by Legal · this clause owned by ${esc(p.owner)}</div>
         <h3 style="margin:6px 0 14px">${p.name}</h3>
         <table class="simple"><tr><th>Standard</th><td>${esc(p.standard)}</td></tr><tr><th>Fallback</th><td>${esc(p.fallback)}</td></tr><tr><th>Walk-away</th><td>${esc(p.walkaway)}</td></tr><tr><th>Who decides</th><td>${esc(p.tier)}</td></tr><tr><th>How it's priced</th><td>${esc(p.formula)}</td></tr></table>
         <p class="tiny muted" style="margin-top:12px">Playbook structure (standard, fallback, walk-away, escalation tier) follows the industry pattern used by Ironclad, Spellbook and LegalOn.</p>
@@ -533,7 +534,7 @@
       body = `<div class="callout blue">Similarity is calculated, not guessed: 40% category, 30% deal size, 20% supplier leverage, 10% urgency. Deals scoring 70% or more count as similar.</div>
       <div style="margin-top:12px">${ev.list.map(({ p: x, sim }) => `<div class="prec" style="${sim.score < 0.7 ? "opacity:.62" : ""}">
         <div class="row between"><div><b>${x.supplier}</b> <span class="tiny muted">${x.id} · ${x.year} · ${x.category} · ${fmt(x.annual)}/yr</span></div><span class="chip ${sim.score >= 0.7 ? "blue" : "outline"}">${Math.round(sim.score * 100)}% similar</span></div>
-        <div class="small" style="margin-top:8px"><span class="muted">Ridgeline-style ask:</span> ${esc(x.ask)}<br><span class="muted">Halden agreed:</span> <b>${esc(x.agreed)}</b> · ${x.rounds} round${x.rounds > 1 ? "s" : ""} · approved by ${esc(x.approver)}</div>
+        <div class="small" style="margin-top:8px"><span class="muted">Supplier asked:</span> ${esc(x.ask)}<br><span class="muted">Halden agreed:</span> <b>${esc(x.agreed)}</b> · ${x.rounds} round${x.rounds > 1 ? "s" : ""} · approved by ${esc(x.approver)}</div>
         <div class="tiny muted" style="margin-top:6px">Matched on: ${sim.matched.join(" · ")}</div>
         <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:8px">${sim.parts.map(([n, v]) => `<div><div class="tiny muted">${n}</div><div class="sim-bar"><div style="width:${Math.round(v * 100)}%"></div></div></div>`).join("")}</div>
         <div class="outcome ${x.outcome.type}"><b>${outcomeLabel[x.outcome.type]}:</b> ${esc(x.outcome.label)}</div>
@@ -542,7 +543,7 @@
     }
     return `<div class="drawer-bg" data-act="drawer-close"><div class="drawer" data-stop="1">
       <div class="row between"><div class="eyebrow">Evidence · ${i.title}</div><button class="btn small" data-act="drawer-close">Close</button></div>
-      <h2 style="margin-top:8px">${tab === "playbook" ? "What Legal's playbook says" : `${ev.n} similar past deal${ev.n === 1 ? "" : "s"}, ${ev.losses} later cost money`}</h2>
+      <h2 style="margin-top:8px">${tab === "playbook" ? "What Halden's playbook says" : `${ev.n} similar past deal${ev.n === 1 ? "" : "s"}, ${ev.losses} later cost money`}</h2>
       <div class="tabs"><button class="${tab === "precedents" ? "on" : ""}" data-act="drawer" data-tab="precedents">Past deals (${ev.list.length})</button><button class="${tab === "playbook" ? "on" : ""}" data-act="drawer" data-tab="playbook">Playbook clause</button></div>
       ${body}
       <p class="tiny muted" style="margin-top:16px">All past deals are synthetic seed data for this prototype. In production, history comes from Halden's signed contracts and redline versions (for example via Sirion's Extraction Agent), and outcomes from post-signature records.</p>
@@ -571,6 +572,7 @@
     document.getElementById("app").innerHTML = topbar() + `<div class="wrap">${main()}</div>` + drawer() + (TL.renderTour ? TL.renderTour() : "");
     if (TL.keepScroll) window.scrollTo(0, y);
     TL.keepScroll = false;
+    if (TL.afterRender) TL.afterRender();
   }
   TL.render = render;
 
@@ -621,7 +623,7 @@
       drawer: () => { S.drawer = { issueId: S.issueId || (S.drawer && S.drawer.issueId), tab: el.dataset.tab }; TL.keepScroll = true; },
       "drawer-close": () => { S.drawer = null; TL.keepScroll = true; },
       reset: () => { S = fresh(); window.scrollTo(0, 0); toast("Demo reset"); },
-      tour: () => { S.tourStep = 0; TL.keepScroll = true; },
+      tour: () => { TL.startTour(S); },
     };
     if (handlers[a]) { handlers[a](); render(); }
     else if (TL.extraHandlers && TL.extraHandlers[a]) { TL.extraHandlers[a](el, S); render(); }
@@ -631,5 +633,5 @@
   });
   document.addEventListener("keydown", (ev) => { if (ev.key === "Escape" && S.drawer) { S.drawer = null; TL.keepScroll = true; render(); } });
 
-  TL.boot = function () { render(); if (TL.renderTour && !TL.tourSeen) { S.tourStep = 0; render(); } };
+  TL.boot = function () { if (TL.startTour) TL.startTour(S); render(); };
 })();
