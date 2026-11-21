@@ -233,7 +233,7 @@
         <table class="simple"><tr><th>Obligation</th><th>When</th><th>Owner</th></tr>${obligations.map((o) => `<tr><td>${o[0]}</td><td>${o[1]}</td><td>${o[2]}</td></tr>`).join("")}</table>
         <div class="callout blue" style="margin-top:12px">Added to Halden's negotiation history as <b>P-701</b>, outcome pending. Outcomes are checked at 6 and 12 months, so future recommendations learn whether these terms held up.</div>
       </div>
-      <div class="card pad"><div class="eyebrow">Decision log</div><p class="small muted" style="margin:6px 0 8px">Who decided what, and when. Nothing agreed on a call goes unrecorded.</p>
+      <div class="card pad"><div class="eyebrow">Decision log</div><p class="small muted" style="margin:6px 0 8px">Who decided what, and when. Nothing agreed on a call goes unrecorded. Times are from this demo session.</p>
         ${S.log.map((l) => `<div class="row" style="padding:8px 0;border-bottom:1px solid var(--line);align-items:flex-start"><span class="tiny muted mono" style="width:58px;flex:none">${l.at}</span><span class="small"><b>${esc(l.who)}</b> · ${esc(l.what)}</span></div>`).join("")}
       </div>
     </div>`;
